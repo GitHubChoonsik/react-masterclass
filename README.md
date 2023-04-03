@@ -8,6 +8,7 @@ npm i react-query
 npm i --save react-apexcharts apexcharts
 npm i react-helmet
 npm i --save-dev @types/react-helmet
+npm i recoil
 
 Theme
 https://flatuicolors.com/palette/gb
