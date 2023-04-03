@@ -9,6 +9,7 @@ npm i --save react-apexcharts apexcharts
 npm i react-helmet
 npm i --save-dev @types/react-helmet
 npm i recoil
+npm i react-hook-form
 
 Theme
 https://flatuicolors.com/palette/gb
