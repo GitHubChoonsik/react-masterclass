@@ -3,7 +3,14 @@ import { useQuery } from "react-query";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMatch, useNavigate } from "react-router-dom";
-import { IGetMoviesResult, getMovies } from "../api";
+import {
+  IGetMoviesResult,
+  IMovie,
+  getLastestMovie,
+  getNowMovies,
+  getTopMovies,
+  getUpcomingMovies,
+} from "../api";
 import { makeImagePath } from "../utils";
 
 const Wrapper = styled.div`
@@ -39,9 +46,14 @@ const Overview = styled.p`
   width: 50%;
 `;
 
+const SliderTitle = styled.h1`
+  font-size: 25px;
+  font-weight: bold;
+`;
+
 const Slider = styled.div`
   position: relative;
-  top: -100px;
+  top: -200px;
 `;
 
 const Row = styled(motion.div)`
@@ -169,16 +181,27 @@ const offset = 6;
 function Home() {
   const navigate = useNavigate();
   const bigMovieMatch = useMatch("/movies/:movieId");
-  const { data, isLoading } = useQuery<IGetMoviesResult>(
-    ["movies", "nowPlaying"],
-    getMovies
-  );
+  const { data, isLoading } = useQuery<IMovie>(["latest"], getLastestMovie);
+  const useMultipleQuery = () => {
+    const nowPlaying = useQuery<IGetMoviesResult>(["nowPlaying"], getNowMovies);
+    const topRated = useQuery<IGetMoviesResult>(["topRated"], getTopMovies);
+    const upComing = useQuery<IGetMoviesResult>(
+      ["upComing"],
+      getUpcomingMovies
+    );
+    return [nowPlaying, topRated, upComing];
+  };
+  const [
+    { isLoading: loadingNow, data: nowData },
+    { isLoading: loadingTop, data: topData },
+    { isLoading: loadingUpComing, data: upComingData },
+  ] = useMultipleQuery();
   const [index, setIndex] = useState(0);
   const increaseIndex = () => {
-    if (data) {
+    if (nowData) {
       if (leaving) return;
       toggleLeaving();
-      const totalMoives = data.results.length - 1;
+      const totalMoives = nowData.results.length - 1;
       const maxIndex = Math.floor(totalMoives / offset) - 1;
       setIndex((prev) => (prev === maxIndex ? 0 : prev + 1));
     }
@@ -191,7 +214,7 @@ function Home() {
   const onOverlayClick = () => navigate(-1);
   const clickedMovie =
     bigMovieMatch?.params.movieId &&
-    data?.results.find(
+    nowData?.results.find(
       (movie) => String(movie.id) === bigMovieMatch.params.movieId
     );
   return (
@@ -202,12 +225,13 @@ function Home() {
         <>
           <Banner
             onClick={increaseIndex}
-            bgPhoto={makeImagePath(data?.results[0].backdrop_path || "")}
+            bgPhoto={makeImagePath(data?.backdrop_path || "")}
           >
-            <Title>{data?.results[0].title}</Title>
-            <Overview>{data?.results[0].overview}</Overview>
+            <Title>{data?.title}</Title>
+            <Overview>{data?.overview}</Overview>
           </Banner>
           <Slider>
+            <SliderTitle>Popular</SliderTitle>
             <AnimatePresence initial={false} onExitComplete={toggleLeaving}>
               <Row
                 variants={rowVariants}
@@ -217,7 +241,7 @@ function Home() {
                 transition={{ type: "tween", duration: 0.5 }}
                 key={index}
               >
-                {data?.results
+                {nowData?.results
                   .slice(1)
                   .slice(offset * index, offset * index + offset)
                   .map((movie) => (
